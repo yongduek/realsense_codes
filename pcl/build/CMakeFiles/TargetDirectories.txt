@@ -1,0 +1,3 @@
+/disk1/fusion/my_realsense_codes/pal/build/CMakeFiles/rebuild_cache.dir
+/disk1/fusion/my_realsense_codes/pal/build/CMakeFiles/edit_cache.dir
+/disk1/fusion/my_realsense_codes/pal/build/CMakeFiles/LRS_PCL.dir
