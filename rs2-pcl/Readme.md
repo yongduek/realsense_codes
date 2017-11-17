@@ -9,3 +9,7 @@
 5. file save in pcl data format `.pcd`
    - `depth`, `nim`, `vtx`, `normal`
 6. file save the intrinsic of depth sensor, and the intrinsic of rgb sensor.
+
+
+- normal computation from depth:
+https://stackoverflow.com/questions/34644101/calculate-surface-normals-from-depth-image-using-neighboring-pixels-cross-produc
