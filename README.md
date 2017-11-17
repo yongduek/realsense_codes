@@ -1,6 +1,6 @@
 # realsense_codes
 
-USED Libs:
+Used Libs:
 PCL, OpenCV, realsense2
 
 TODOs
