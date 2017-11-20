@@ -122,6 +122,11 @@ struct RS2Data
 	{
 		pipe.start();
 		for (auto i=0; i<30; i++) pipe.wait_for_frames();
+		frameset = pipe.wait_for_frames();
+		rs2::depth_frame depthf = frameset.get_depth_frame();
+		rs2::video_frame colorf   = frameset.get_color_frame();
+		this->depth_height = depthf.get_height();
+		this->depth_width  = depthf.get_width();
 
         const rs2::pipeline_profile pp = pipe.get_active_profile();
 
@@ -172,10 +177,39 @@ struct RS2Data
 	{
 		frameset = pipe.wait_for_frames();
 		rs2::depth_frame depthf = frameset.get_depth_frame();
-		rs2::video_frame colorf   = frameset.get_color_frame();
-		points = pc.calculate (depthf);
-		int height = depthf.get_height(), width = depthf.get_width();
+		rs2::video_frame colorf = frameset.get_color_frame();
 
+		auto depth_data = (const uint16_t *) depthf.get_data();
+
+		// retrieve depth image
+		//
+		cv_depth_map = cv::Mat_<float>(depth_height, depth_width);
+		for (auto r=0; r < depth_height; r++) {
+			auto r_step = r * depth_width;
+			for (auto c=0; c < depth_width; c++) {
+				float z = depth_units * depth_data[r_step + c]; // converted to meter unit
+				cv_depth_map(r,c) = z;
+			}
+		}
+
+		{
+
+			cerr << "@ depth_map(width/2, height/2) = " << cv_depth_map(depth_height/2, depth_width/2) << endl;
+					
+			cv::Mat_<uchar> img(cv_depth_map.size());
+			float img_scale = 1000 * 255. / (1<<12) ;
+			for (auto r=0; r < depth_height; r++) {
+				for (auto c=0; c < depth_width; c++) {
+					img(r,c) = cv::saturate_cast<uchar> ( cv_depth_map(r,c) * img_scale );
+				}
+			}
+			cv::imwrite ("depth_img.png", img);
+		}
+		
+		points = pc.calculate (depthf);
+
+		
+		
         {
             //auto depth_frame = (rs2::frame_interface*) depthf.get();
             //double depth_unit = depth_frame->get_sensor()->get_option(RS_OPTION_DEPTH_UNITS).query();
@@ -189,8 +223,8 @@ struct RS2Data
 				cerr << "@ size of pcd = " << points.size() << endl;
 
 				for (auto i=0; i<points.size(); i++) {
-					int r = i / width;
-					int c = i % width;
+					int r = i / depth_width;
+					int c = i % depth_width;
 					pCloud->points[i].x = vertex[i].x;
 					pCloud->points[i].y = vertex[i].y;
 					pCloud->points[i].z = vertex[i].z;
@@ -232,8 +266,13 @@ public:
 	
 	rs2::frameset frameset;
 
+	unsigned int   depth_width, depth_height;
 	rs2_intrinsics intrinsics;
-	double depth_units ;
+	double         depth_units;
+
+	// depth_map, distance_map, vertex_map, normal_map, nip_map, tsdf_weight_map
+
+	cv::Mat_<float> cv_depth_map;
 };
 
 
